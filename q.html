@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        label {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+<div id="quizDiv">
+    <!-- Questions will be dynamically loaded here -->
+</div>
+<button onclick="submitQuiz()">Submit</button>
+<div id="resultDiv"></div>
+<style>
+    .correct { color: green; }
+    .incorrect { color: red; }
+</style>
+<script>
+    let questionsData;
+
+    function loadQuestions() {
+        // Replace this URL with the actual URL of your CSV file
+        const csvUrl = "https://cdn.rawgit.com/sujathareddy68/quiz/master/ScreeningQuestions.csv";
+
+        fetch(csvUrl)
+            .then(response => response.text())
+            .then(data => {
+                const rows = data.split('\n');
+                questionsData = rows.slice(1).map(row => row.split(','));
+
+                // Shuffle the questions array
+                shuffleArray(questionsData);
+
+                let htmlContent = '';
+                questionsData.slice(0, 5).forEach((question, index) => {
+                    const questionNumber = index + 1;
+                    htmlContent += `<div id="q_${index}" class="question"><h2>Question ${questionNumber}</h2>`;
+                    htmlContent += `<p>${question[0]}</p>`;
+
+                    for (let i = 1; i <= 4; i++) {
+                        htmlContent += `<label><input type="radio" name="q_${index}" value="${String.fromCharCode(64 + i)}"> ${question[i]}</label><br>`;
+                    }
+
+                    htmlContent += '</div>';
+                });
+
+                document.getElementById('quizDiv').innerHTML = htmlContent;
+            });
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function submitQuiz() {
+        let answers = [];
+        for (let i = 0; i < 5; i++) {
+            let selectedOption = document.querySelector(`input[name=q_${i}]:checked`);
+            if (selectedOption) {
+                answers.push(selectedOption.value);
+            }
+        }
+
+        if (answers.length === 5) {
+            let result = calculateResult(answers);
+            document.getElementById('quizDiv').style.display = 'none';
+            document.getElementById('resultDiv').innerHTML = result;
+        } else {
+            alert('Please answer all questions.');
+        }
+    }
+
+    function calculateResult(answers) {
+        let correctAnswers = 0;
+        let htmlResult = '<h2>Quiz Results</h2><ul>';
+        for (let i = 0; i < answers.length; i++) {
+            const correctAnswer = questionsData[i][5].trim().toUpperCase(); // Correct answer from CSV
+            const selectedAnswer = answers[i].trim().toUpperCase(); // User's selected answer
+            const isCorrect = correctAnswer === selectedAnswer;
+
+            if (isCorrect) {
+                correctAnswers++;
+                htmlResult += `<li class="correct">Question ${i + 1}: Correct</li>`;
+            } else {
+                htmlResult += `<li class="incorrect">Question ${i + 1}: Incorrect</li>`;
+                htmlResult += `<p>Correct Answer: ${correctAnswer}</p>`;
+                htmlResult += `<p>Your Answer: ${selectedAnswer}</p>`;
+            }
+        }
+        htmlResult += `</ul><p>Total Correct Answers: ${correctAnswers}</p>`;
+        return htmlResult;
+    }
+
+    // Load questions when the page is loaded
+    window.onload = loadQuestions;
+</script>
+</body>
+</html>
