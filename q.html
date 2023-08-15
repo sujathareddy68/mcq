@@ -22,7 +22,7 @@
         let score = 0;
 
         async function loadQuestions() {
-            const response = await fetch("https://raw.githubusercontent.com/sujathareddy68/mcq/main/ScreeningQuestions.csv");
+            const response = await fetch("https://github.com/sujathareddy68/mcq/blob/main/ScreeningQuestions.csv");
             const data = await response.text();
             const rows = data.split('\n');
             for (const row of rows) {
