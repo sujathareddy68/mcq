@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCQ Quiz</title>
+    <style>
+        /* Add your styles here */
+    </style>
+</head>
+<body>
+    <h1>MCQ Quiz</h1>
+    <div id="question-container">
+        <p id="question"></p>
+        <form id="options-form">
+            <!-- Options will be dynamically generated here -->
+        </form>
+        <button type="button" id="submitButton" onclick="submitAnswer()">Next</button>
+    </div>
+
+    <script>
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        async function loadQuestions() {
+            const response = await fetch("https://raw.githubusercontent.com/sujathareddy68/mcq/main/ScreeningQuestions.csv");
+            const data = await response.text();
+            const rows = data.split('\n');
+            for (const row of rows) {
+                const [Questions, OptionA, OptionB, OptionC, OptionD, Answer] = row.split(',');
+                questions.push({ question: Questions, options: [OptionA, OptionB, OptionC, OptionD], answer: Answer });
+            }
+            generateRandomQuestions();
+        }
+
+        function generateRandomQuestions() {
+            const randomIndices = [];
+            while (randomIndices.length < 5) {
+                const randomIndex = Math.floor(Math.random() * questions.length);
+                if (!randomIndices.includes(randomIndex)) {
+                    randomIndices.push(randomIndex);
+                }
+            }
+            questions = randomIndices.map(index => questions[index]);
+            showQuestion(currentQuestionIndex);
+        }
+
+        function showQuestion(index) {
+            const questionElement = document.getElementById('question');
+            const form = document.getElementById('options-form');
+
+            questionElement.textContent = questions[index].question;
+            form.innerHTML = ''; // Clear previous options
+
+            for (let i = 0; i < questions[index].options.length; i++) {
+                const optionLabel = document.createElement('label');
+                const optionInput = document.createElement('input');
+                optionInput.type = 'radio';
+                optionInput.name = 'option';
+                optionInput.value = String.fromCharCode(65 + i); // Convert to A, B, C, D
+                optionLabel.appendChild(optionInput);
+                optionLabel.appendChild(document.createTextNode(questions[index].options[i]));
+                form.appendChild(optionLabel);
+                form.appendChild(document.createElement('br'));
+            }
+
+            // Adjust the button text based on the current question
+            const submitButton = document.getElementById('submitButton');
+            if (currentQuestionIndex === questions.length - 1) {
+                submitButton.textContent = 'Submit';
+            } else {
+                submitButton.textContent = 'Next';
+            }
+        }
+
+        function submitAnswer() {
+            const selectedOption = document.querySelector('input[name="option"]:checked');
+            if (!selectedOption) {
+                alert('Please select an option');
+                return;
+            }
+
+            const userChoice = selectedOption.value;
+            const correctAnswer = questions[currentQuestionIndex].answer;
+
+            // Store user's choice
+            questions[currentQuestionIndex].userChoice = userChoice;
+
+            if (userChoice === correctAnswer) {
+                score++;
+            }
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion(currentQuestionIndex);
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            const questionContainer = document.getElementById('question-container');
+            questionContainer.innerHTML = '<h2>Quiz Completed</h2>';
+            questionContainer.innerHTML += `<p>Your score: ${score} out of ${questions.length}</p>`;
+
+            // Display results for each question
+            for (let i = 0; i < questions.length; i++) {
+                const result = document.createElement('p');
+                if (questions[i].userChoice === questions[i].answer) {
+                    result.textContent = `Question ${i + 1}: Correct`;
+                    result.classList.add('correct');
+                } else {
+                    result.textContent = `Question ${i + 1}: Incorrect`;
+                    result.classList.add('incorrect');
+                    const userChoice = document.createElement('p');
+                    userChoice.textContent = `Your Choice: ${questions[i].userChoice}`;
+                    const correctAnswer = document.createElement('p');
+                    correctAnswer.textContent = `Correct Answer: ${questions[i].answer}`;
+                    result.appendChild(userChoice);
+                    result.appendChild(correctAnswer);
+                }
+                questionContainer.appendChild(result);
+            }
+        }
+
+        loadQuestions();
+    </script>
+</body>
+</html>
